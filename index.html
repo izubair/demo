@@ -1,0 +1,215 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>Clark County Public Works Map</title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      .editArea-container {
+            background: #fff;
+            font-family: "Avenir Next W00", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            line-height: 1.5em;
+            overflow: auto;
+            padding: 0px 15px 12px 15px;
+            width: 300px;                       
+        }
+        .listArea-container{
+            background: #fff;
+            font-family: "Avenir Next W00", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            line-height: 1.5em;
+            overflow: auto;
+            padding: 5px 15px;
+            width: 320px;
+        }
+
+        .nav-list{
+            height: 200px;
+            overflow-y: scroll;
+        }
+
+        .assetUL li:hover,
+        .assetUL li:focus {
+            background-color: #e4e4e4;
+        }     
+
+        .edit-button:hover,
+        .edit-button:focus {
+            background-color: #e4e4e4;
+        }       
+
+        .inputInfo:disabled { 
+            background: #dddddd;
+        }
+
+        .inputInfo {
+            font-size: 12px;
+            height: 32px;
+            margin-bottom: 6px;
+            
+            width: 100%;
+        }
+
+        .list-heading {
+            font-weight: normal;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            color: #323232;
+        }
+
+        .edit-button {
+            font-size: 14px;
+            height: 32px;
+            margin-top: 10px;
+            width: 100%;
+            background-color: transparent;
+            border: 2px solid #0079c1;
+            color: #0079c1;           
+        }
+
+        .or-wrap {
+            background-color: #e0e0e0;
+            height: 1px;
+            margin: 1em 0;
+            overflow: visible;
+        }
+
+        .or-text {
+            background: #fff;
+            line-height: 0;
+            padding: 0 1em;
+            position: relative;
+            top: -.75em;
+        }
+
+        input:invalid {
+            border: 1px solid red;
+        }
+
+        input:valid {
+            border: 1px solid green;
+        }
+      .esri-hello-world {
+            font-family: "Helvetica Neue", sans-serif;
+            display: inline-block;
+        }
+
+        .esri-hello-world--emphasis {
+            font-weight: bold;
+        }
+        /* Set up some css rules to animate things */
+       
+        /* Some rules to change the appearance of clusters and it's text when activated */
+ 
+        /* Scale up the clusters when activated */
+        .cluster-group.activated {     
+            transform-origin: center; 
+            transform: scale(1.2);
+            transition: transform linear 0.4s;
+        }
+
+         /* Change the appearance of clusters when activated */
+        .cluster-group.activated .cluster {
+            stroke: rgba(255,255,255,1);
+            stroke-width: 2;
+            transition: all ease 1s;
+        }
+           
+        .cluster-group.activated .cluster-text {
+            fill: #000;
+            font-weight: bold;
+            transition: all ease 1s;
+        }
+
+
+        /* hide flares by default */
+        .flare-group {
+            opacity: 0;
+        }
+
+       
+       /* animate display of flares */
+        .flare-group.activated {
+            opacity: 1;
+            transition: opacity linear 0.06s;
+        }
+
+        /* this just chains the display of flares to occur one after the other using transition delay - could be a better way to do this natively but using SASS or LESS this would be much more concise */
+        .flare-group.activated:nth-of-type(1) {
+            transition-delay: 0.06s;
+        }
+
+        .flare-group.activated:nth-of-type(2) {
+            transition-delay: 0.12s;
+        }
+
+        .flare-group.activated:nth-of-type(3) {
+            transition-delay: 0.18s;
+        }
+
+        .flare-group.activated:nth-of-type(4) {
+            transition-delay: 0.24s;
+        }
+
+        .flare-group.activated:nth-of-type(5) {
+            transition-delay: 0.30s;
+        }
+
+        .flare-group.activated:nth-of-type(6) {
+            transition-delay: 0.36s;
+        }
+
+        .cluster-group .flare-group.activated:nth-of-type(7) {
+            transition-delay: 0.42s;
+        }
+
+        .flare-group.activated:nth-of-type(8) {
+            transition-delay: 0.48s;
+        }
+    </style>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.3/esri/css/main.css">		    					  
+    <script>
+      var locationPath = location.pathname.replace(/\/[^\/]+$/, "");
+      window.dojoConfig = {
+        packages: [
+          {
+            name: "app",
+            location: locationPath + "app"
+          },
+          {
+              name: "fcl",
+              location: location.pathname.replace(/\/[^/]+$/, '') + "/fcl"
+          }
+        ]
+      };
+    </script>
+		<link rel="stylesheet" href="jqueryui/jquery-ui.min.css">
+    <script src="jqueryui/jquery-3.1.1.js"></script> 					
+	  <script src="jqueryui/jquery-ui.min.js"></script> 
+    <script src="https://js.arcgis.com/4.3/"></script>
+      
+  </head>
+  <body>
+    <div id="viewDiv"></div> 
+      <!--
+<div id="TopLeftPanel">  
+            <img id="lyrImg" src="app/layersicon.png"/>         
+        </div>
+-->
+          
+        
+      <div id="baseMapDiv1">
+      </div> 
+      
+      
+    <script>require(["app/main", "app/HelloWorld", "app/AssetEdit", "dojo/domReady!"]);</script>      
+  </body>
+   
+</html>
