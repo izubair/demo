@@ -632,10 +632,10 @@ function initLayer(data) {
     var lgSymbol=new SimpleMarkerSymbol({ size: 28, outline: new SimpleLineSymbol({ color: new Color([41, 163, 41, 0.8]) }), color: new Color([51, 204, 51, 0.8]) });
     var xlSymbol=new SimpleMarkerSymbol({ size: 32, outline: new SimpleLineSymbol({ color: new Color([200, 52, 59, 0.8]) }), color: new Color([250, 65, 74, 0.8]) });
 
-    renderer.addClassBreakInfo(0, 19, smSymbol);
-    renderer.addClassBreakInfo(20, 150, mdSymbol);
-    renderer.addClassBreakInfo(151, 1000, lgSymbol);
-    renderer.addClassBreakInfo(1001, Infinity, xlSymbol);
+    renderer.addClassBreakInfo(0, 2, smSymbol);
+    renderer.addClassBreakInfo(3, 5, mdSymbol);
+    renderer.addClassBreakInfo(6, 9, lgSymbol);
+    renderer.addClassBreakInfo(10, Infinity, xlSymbol);
 
     var areaRenderer;
 
@@ -656,10 +656,10 @@ function initLayer(data) {
     var lgAreaSymbol=new SimpleFillSymbol({ color: new Color([51, 204, 51, 0.4]), outline: new SimpleLineSymbol({ color: new Color([41, 163, 41, 0.8]), style: "dash" }) });
     var xlAreaSymbol=new SimpleFillSymbol({ color: new Color([250, 65, 74, 0.4]), outline: new SimpleLineSymbol({ color: new Color([200, 52, 59, 0.8]), style: "dash" }) });
 
-    areaRenderer.addClassBreakInfo(0, 19, smAreaSymbol);
-    areaRenderer.addClassBreakInfo(20, 150, mdAreaSymbol);
-    areaRenderer.addClassBreakInfo(151, 1000, lgAreaSymbol);
-    areaRenderer.addClassBreakInfo(1001, Infinity, xlAreaSymbol);
+    areaRenderer.addClassBreakInfo(0, 2, smAreaSymbol);
+    areaRenderer.addClassBreakInfo(3, 5, mdAreaSymbol);
+    areaRenderer.addClassBreakInfo(6, 9, lgAreaSymbol);
+    areaRenderer.addClassBreakInfo(10, Infinity, xlAreaSymbol);
 
     //Set up another class breaks renderer to style the flares individually
     var flareRenderer=new ClassBreaksRenderer({
@@ -672,10 +672,15 @@ function initLayer(data) {
     var lgFlareSymbol=new SimpleMarkerSymbol({ size: 14, color: new Color([51, 204, 51, 0.8]), outline: new SimpleLineSymbol({ color: new Color([41, 163, 41, 0.8]) }) });
     var xlFlareSymbol=new SimpleMarkerSymbol({ size: 14, color: new Color([250, 65, 74, 0.8]), outline: new SimpleLineSymbol({ color: new Color([200, 52, 59, 0.8]) }) });
 
-    flareRenderer.addClassBreakInfo(0, 19, smFlareSymbol);
-    flareRenderer.addClassBreakInfo(20, 150, mdFlareSymbol);
-    flareRenderer.addClassBreakInfo(151, 1000, lgFlareSymbol);
-    flareRenderer.addClassBreakInfo(1001, Infinity, xlFlareSymbol);
+    //flareRenderer.addClassBreakInfo(0, 19, smFlareSymbol);
+    //flareRenderer.addClassBreakInfo(20, 150, mdFlareSymbol);
+    //flareRenderer.addClassBreakInfo(151, 1000, lgFlareSymbol);
+    //flareRenderer.addClassBreakInfo(1001, Infinity, xlFlareSymbol);
+
+    flareRenderer.addClassBreakInfo(0, 2, smFlareSymbol);
+    flareRenderer.addClassBreakInfo(3, 5, mdFlareSymbol);
+    flareRenderer.addClassBreakInfo(6, 9, lgFlareSymbol);
+    flareRenderer.addClassBreakInfo(10, Infinity, xlFlareSymbol);
 
     //set up a popup template
     var popupTemplate=new PopupTemplate({
