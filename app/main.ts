@@ -56,6 +56,7 @@ let editWidget;
 let myPolyLinePnts=[];
 
 var wtFeatures;
+var signFeatures;
 var startup;
 
 var webmap,
@@ -63,7 +64,8 @@ var webmap,
     sceneView,
     activeView,
     graphics,
-    clusterLayer;
+    clusterLayer,
+    clusterLayer_Signs;
 
 //set some defaults
 var maxSingleFlareCount=8;
@@ -88,7 +90,8 @@ var oAuthInfo = new OAuthInfo({
 startup=true;
 webmap = new WebMap({
   portalItem: { // autocasts as new PortalItem()
-    id: "52d69db1858d4ad59cd63bbb18c33f70"
+//    id: "52d69db1858d4ad59cd63bbb18c33f70"
+      id: "d1446a70b90a4c3e87cd1dfcb9cf2337"
   }
 });
 
@@ -133,6 +136,15 @@ mapView.then(function () {
             }
 
             queryWTLayerFeatures();
+        }
+
+        if (event.layer.title==="PW_Signs") {
+            // The LayerView for the desired layer
+            for (let ind=0; ind<event.layer.fields.length; ind++) {
+                console.log("Field Name: "+event.layer.fields[ind].name+" Field Type: "+event.layer.fields[ind].type);
+            }
+
+            querySignsLayerFeatures();
         }
     });
 
@@ -611,7 +623,7 @@ function getEditLayer() {
     return null;
 }
 
-function initLayer(data) {
+function initLayer(clust_lyr, data, clustToScaleParam, flyr) {
 
     //init the layer, more options are available and explained in the cluster layer constructor
 
@@ -683,23 +695,39 @@ function initLayer(data) {
     flareRenderer.addClassBreakInfo(10, Infinity, xlFlareSymbol);
 
     //set up a popup template
-    var popupTemplate=new PopupTemplate({
-        title: "{TEST}",
-        content: [{
-            type: "fields",
-            fieldInfos: [
-                { fieldName: "AssetID", label: "Asset ID", visible: true },
-                { fieldName: "EmpID", label: "Employee ID", visible: true },
-                { fieldName: "EmpEmail", label: "Employee Email", visible: true }
-            ]
-        }]
-    });
-
+    var popupTemplate;
+    if (flyr.title=== "TestWorkTicketLyr") {
+        popupTemplate=new PopupTemplate({
+            title: "{TEST}",
+            content: [{
+                type: "fields",
+                fieldInfos: [
+                    { fieldName: "AssetID", label: "Asset ID", visible: true },
+                    { fieldName: "EmpID", label: "Employee ID", visible: true },
+                    { fieldName: "EmpEmail", label: "Employee Email", visible: true }
+                ]
+            }]
+        });
+    }
+    else if (flyr.title==="PW_Signs") {
+        popupTemplate=new PopupTemplate({
+            title: "{SIGNS}",
+            content: [{
+                type: "fields",
+                fieldInfos: [
+                    { fieldName: "FID", label: "ID", visible: true },
+                    { fieldName: "CODE", label: "CODE", visible: true },
+                    { fieldName: "SIZE", label: "SIZE", visible: true }
+                ]
+            }]
+        });
+    }
+   
 
     var options={
         id: "flare-cluster-layer",
         title: "flare-cluster-layer",
-        clusterToScale: 500000,
+        clusterToScale: clustToScaleParam,
         clusterRenderer: renderer,
         areaRenderer: areaRenderer,
         flareRenderer: flareRenderer,
@@ -714,14 +742,17 @@ function initLayer(data) {
         data: wtInfo.data
     }
 
-    clusterLayer=new fcl.FlareClusterLayer(options);
-    webmap.add(clusterLayer);
+    clust_lyr=new fcl.FlareClusterLayer(options);
+    webmap.add(clust_lyr);
 
 }
 
 function clearLayer() {
     webmap.remove(clusterLayer);
     clusterLayer=null;
+
+    webmap.remove(clusterLayer_Signs);
+    clusterLayer_Signs=null;
 }
 
 //var wtQuery = new Query();
@@ -755,8 +786,8 @@ function queryWTLayerFeatures() {
             startup=false;
             addClusters(wtFeatures);
 
-
-            initLayer(wtInfo.data);
+            
+            initLayer(clusterLayer, wtInfo.data, 500000, wtLayer);
 
             clusterLayer.setActiveView(mapView);
             clusterLayer.draw(mapView);
@@ -804,6 +835,88 @@ function addClusters(resp) {
         };
     });
 }
+///////////////////////////////////////////////////////////////////////////
+function querySignsLayerFeatures() {
+    // Query Work Ticket Layer for matching records
+    let signsLayer=webmap.allLayers.find(function (layer) {
+        return layer.title==="PW_Signs";
+    });
+    /*
+    wtQuery.returnGeometry = true;
+    wtQuery.outFields = [
+        "*"
+    ];
+    wtQuery.where = "1=1";
+    wtLayer.queryFeatures(wtQuery, function (featuresSet) {
+        //startup = false;
+        addClusters(featuresSet.features);
+        addClusterLayer();
+    });*/
+    var area=Polygon.fromExtent(mapView.extent);
+
+    var queryParams=signsLayer.createQuery();
+    queryParams.geometry=area;
+    signsLayer.queryFeatures(queryParams).then(function (results) {
+        // prints the array of result graphics to the console
+        //console.log(results.features);
+
+
+        signFeatures=results.features;
+        if (startup) {
+            startup=false;
+            addClusters_Signs(signFeatures);
+
+
+            initLayer(clusterLayer_Signs, signsInfo.data, 100000, signsLayer);
+
+            clusterLayer_Signs.setActiveView(mapView);
+            clusterLayer_Signs.draw(mapView);
+        }
+    });
+    signsLayer.visible=false;
+}
+
+////////////////////////////
+var signsInfo={
+    data: {}
+};
+function addClusters_Signs(resp) {
+
+
+    wtInfo.data=arrayUtils.map(resp, function (p: any) {
+        //var latlng = new  Point(parseFloat(p.Lon), parseFloat(p.Lat), wgs);
+        //var webMercator = webMercatorUtils.geographicToWebMercator(latlng);
+        var attributes={
+            "FID": p.FID,
+            "CODE": p.CODE,
+            "FACING": p.FACING,
+            "SIZE": p.SIZE
+        };
+
+        if (p.geometry==null) {
+            return {
+                "x": 0,
+                "y": 0,
+                "FID": undefined,
+                "CODE": undefined,
+                "FACING": undefined,
+                "SIZE": undefined,
+                "name": undefined
+            };
+        }
+
+        return {
+            "x": p.geometry.longitude,
+            "y": p.geometry.latitude,
+            "FID": p.attributes.FID,
+            "CODE": p.attributes.CODE,
+            "FACING": p.attributes.FACING,
+            "SIZE": p.attributes.SIZE,
+            "name": p.attributes.FID+"_"+p.attributes.CODE
+        };
+    });
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
