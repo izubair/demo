@@ -40,6 +40,7 @@ import AssetsList=require("app/AssetsList");
 import arrayUtils=require("dojo/_base/array");
 import ClassBreaksRenderer=require("esri/renderers/ClassBreaksRenderer");
 import PopupTemplate=require("esri/PopupTemplate");
+import watchUtils=require("esri/core/watchUtils");
 import fcl=require("fcl/FlareClusterLayer_v4");
 
 
@@ -58,6 +59,8 @@ let myPolyLinePnts=[];
 var wtFeatures;
 var signFeatures;
 var startup;
+
+var PW_Signs_Created=false;
 
 var webmap,
     mapView,
@@ -99,7 +102,7 @@ mapView = new MapView({
   map: webmap,
   container: "viewDiv",
   center: [-115.144, 36.152],
-  zoom: 12
+  zoom: 8
 });
 
 var bufferLayer=new GraphicsLayer();
@@ -135,7 +138,7 @@ mapView.then(function () {
                 console.log("Field Name: " + event.layer.fields[ind].name + " Field Type: " + event.layer.fields[ind].type);
             }
 
-            queryWTLayerFeatures();
+//            queryWTLayerFeatures();
         }
 
         if (event.layer.title==="PW_Signs") {
@@ -144,7 +147,9 @@ mapView.then(function () {
                 console.log("Field Name: "+event.layer.fields[ind].name+" Field Type: "+event.layer.fields[ind].type);
             }
 
-            querySignsLayerFeatures();
+            PW_Signs_Created=true;
+            //querySignsLayerFeatures();
+            
         }
     });
 
@@ -509,7 +514,55 @@ mapView.then(function () {
                 bufferPoint(finalPnt, initPoint);
             }
         }
-    });// on drag   
+    });// on drag  
+
+    // Watch view's stationary property for becoming true. 
+    watchUtils.whenTrue(mapView, "stationary", function () {
+        // Get the new center of the view only when view is stationary. 
+        if (mapView.center) {
+            var info="<br> <span> the view center changed. </span> x: "+
+                mapView.center.x.toFixed(2)+" y: "+mapView.center.y.toFixed(2);
+            console.log(info);
+        }
+
+        // Get the new extent of the view only when view is stationary. 
+        if (mapView.extent) {
+            var info="<br> <span> the view extent changed: </span>"+
+                "<br> xmin:"+mapView.extent.xmin.toFixed(2)+" xmax: "+
+                mapView.extent.xmax.toFixed(
+                    2)+
+                "<br> ymin:"+mapView.extent.ymin.toFixed(2)+" ymax: "+
+                mapView.extent.ymax.toFixed(
+                    2);
+            console.log(info);
+
+            //clearLayer_Signs();
+            // Get PW_Signs features using current view extent
+            //querySignsLayerFeatures();
+            if (PW_Signs_Created) {
+                let signsLayer=webmap.allLayers.find(function (layer) {
+                    return layer.title==="PW_Signs";
+                });
+
+                var area=Polygon.fromExtent(mapView.extent);
+                var queryParams=signsLayer.createQuery();
+                queryParams.geometry=area;
+
+                signsLayer.queryFeatureCount(queryParams).then(function (numFeatures) {
+                    // prints the total count to the console
+                    console.log("FeatureCount: "+numFeatures);
+                    if (numFeatures<2000) {
+                        querySignsLayerFeatures();
+                    }
+                    else {
+                        signsInfo.data=[];                       
+                        clusterLayer_Signs.setData(signsInfo.data, true);
+                    }
+
+                });
+            }
+        }
+    });
 
     // *****************************************************
     // select Feature function
@@ -623,7 +676,7 @@ function getEditLayer() {
     return null;
 }
 
-function initLayer(clust_lyr, data, clustToScaleParam, flyr) {
+function initLayer(clust_lyr, dataParam, clustToScaleParam, flyr) {
 
     //init the layer, more options are available and explained in the cluster layer constructor
 
@@ -739,20 +792,28 @@ function initLayer(clust_lyr, data, clustToScaleParam, flyr) {
         maxSingleFlareCount: maxSingleFlareCount,
         clusterRatio: 75,
         clusterAreaDisplay: areaDisplayMode,
-        data: wtInfo.data
+        data: dataParam
     }
 
-    clust_lyr=new fcl.FlareClusterLayer(options);
-    webmap.add(clust_lyr);
+    //clust_lyr=new fcl.FlareClusterLayer(options);
+    //webmap.add(clust_lyr);
+
+    clusterLayer_Signs=new fcl.FlareClusterLayer(options);
+    webmap.add(clusterLayer_Signs);
 
 }
 
 function clearLayer() {
     webmap.remove(clusterLayer);
-    clusterLayer=null;
+    clusterLayer=null;   
+    wtInfo.data=[];
+}
 
+function clearLayer_Signs() {  
     webmap.remove(clusterLayer_Signs);
     clusterLayer_Signs=null;
+    signsInfo.data=[];
+    signFeatures=[];    
 }
 
 //var wtQuery = new Query();
@@ -837,6 +898,10 @@ function addClusters(resp) {
 }
 ///////////////////////////////////////////////////////////////////////////
 function querySignsLayerFeatures() {
+    // don't do anything untill the PW_Signs layer gets created
+    if (PW_Signs_Created==false) {
+        return;
+    }
     // Query Work Ticket Layer for matching records
     let signsLayer=webmap.allLayers.find(function (layer) {
         return layer.title==="PW_Signs";
@@ -852,14 +917,13 @@ function querySignsLayerFeatures() {
         addClusters(featuresSet.features);
         addClusterLayer();
     });*/
+    
     var area=Polygon.fromExtent(mapView.extent);
-
-    var queryParams=signsLayer.createQuery();
+    var queryParams=signsLayer.createQuery();   
     queryParams.geometry=area;
     signsLayer.queryFeatures(queryParams).then(function (results) {
         // prints the array of result graphics to the console
         //console.log(results.features);
-
 
         signFeatures=results.features;
         if (startup) {
@@ -867,13 +931,18 @@ function querySignsLayerFeatures() {
             addClusters_Signs(signFeatures);
 
 
-            initLayer(clusterLayer_Signs, signsInfo.data, 100000, signsLayer);
+            initLayer(clusterLayer_Signs, signsInfo.data, 3000, signsLayer);
 
             clusterLayer_Signs.setActiveView(mapView);
             clusterLayer_Signs.draw(mapView);
         }
+        else {
+            addClusters_Signs(signFeatures);
+            clusterLayer_Signs.setData(signsInfo.data, true);
+        }
+
+        signsLayer.visible=false;
     });
-    signsLayer.visible=false;
 }
 
 ////////////////////////////
@@ -883,7 +952,7 @@ var signsInfo={
 function addClusters_Signs(resp) {
 
 
-    wtInfo.data=arrayUtils.map(resp, function (p: any) {
+    signsInfo.data=arrayUtils.map(resp, function (p: any) {
         //var latlng = new  Point(parseFloat(p.Lon), parseFloat(p.Lat), wgs);
         //var webMercator = webMercatorUtils.geographicToWebMercator(latlng);
         var attributes={
